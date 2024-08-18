@@ -1,8 +1,11 @@
 import streamlit as st
 import pandas as pd
-import openai
+from openai import OpenAI
+from skllm.config import SKLLMConfig
 
-openai.api_key = st.secrets['api_key']
+api_key = st.secrets['api_key']
+client = OpenAI(api_key=api_key)
+SKLLMConfig.set_openai_key(api_key)
 
 def app():
 
@@ -69,14 +72,14 @@ def app():
         return full_star * star_count + empty_star * (5 - star_count)
 
     def analyze_sentiment(review_text):
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant for analyzing customer reviews."},
                 {"role": "user", "content": f"Analyze the sentiment of this review: {review_text}"}
             ]
         )
-        sentiment = response.choices[0].message['content'].strip()
+        sentiment = response.choices[0].message.content.strip()
         return sentiment
 
     # Dropdown selection based on the given table for comprehensive analysis
