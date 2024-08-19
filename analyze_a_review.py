@@ -6,8 +6,11 @@ openai.api_key = st.secrets['api_key']
 
 def app():
 
+
+
+
     # App title
-    st.title("Analyse GCash App Reviews")
+    st.title("Analyze GCash App Reviews")
 
     # Load the JSON file into a DataFrame
     df = pd.read_json('./final_data.json')
@@ -83,7 +86,7 @@ def app():
     if not df.iloc[start_idx:end_idx].empty:
         selected_index = st.selectbox("Select an index from the table for comprehensive analysis", df.iloc[start_idx:end_idx].index,
                                         index=None,
-                                        placeholder="Select the number from the name...",
+                                        placeholder="Select the number from the table...",
                                     )
 
         if(selected_index):

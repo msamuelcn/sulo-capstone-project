@@ -62,72 +62,74 @@ def app():
 
     topic_count = st.number_input('Select number of topics', min_value=2, max_value=30, value=5, step=1)
 
-    vectorizer = TfidfVectorizer(stop_words='english')
-    X = vectorizer.fit_transform(df['spacy_lemmatized_tokens'])
+    if st.button('Analyze Topics'):
 
-    # Apply NMF
-    n_components = topic_count  # Number of topics
-    nmf_model = NMF(n_components=n_components, init='random', random_state=2)
-    W = nmf_model.fit_transform(X)
-    H = nmf_model.components_
+        vectorizer = TfidfVectorizer(stop_words='english')
+        X = vectorizer.fit_transform(df['spacy_lemmatized_tokens'])
 
-    # Convert terms to words
-    terms = vectorizer.get_feature_names_out()
+        # Apply NMF
+        n_components = topic_count  # Number of topics
+        nmf_model = NMF(n_components=n_components, init='random', random_state=2)
+        W = nmf_model.fit_transform(X)
+        H = nmf_model.components_
 
-    # Set the number of words to display in each word cloud and bar chart
-    wordcloud_words = 30
-    barchart_words = 8
+        # Convert terms to words
+        terms = vectorizer.get_feature_names_out()
 
-    top_terms_per_topic = []
+        # Set the number of words to display in each word cloud and bar chart
+        wordcloud_words = 30
+        barchart_words = 8
 
-    # Generate and display word clouds and bar charts for each topic
-    for topic_idx, topic in enumerate(H):
-        # Get the top 30 words for the word cloud
-        wordcloud_indices = topic.argsort()[-wordcloud_words:]
-        word_freq = {terms[i]: topic[i] for i in wordcloud_indices}
+        top_terms_per_topic = []
 
-        # Create and display the WordCloud
-        wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(word_freq)
+        # Generate and display word clouds and bar charts for each topic
+        for topic_idx, topic in enumerate(H):
+            # Get the top 30 words for the word cloud
+            wordcloud_indices = topic.argsort()[-wordcloud_words:]
+            word_freq = {terms[i]: topic[i] for i in wordcloud_indices}
 
-        st.subheader(f"Topic {topic_idx + 1}")
+            # Create and display the WordCloud
+            wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(word_freq)
 
-        plt.figure(figsize=(10, 5))
-        plt.imshow(wordcloud, interpolation='bilinear')
-        plt.axis("off")
-        plt.title(f"Word Cloud for Topic {topic_idx + 1}")
-        plt.show()
+            st.subheader(f"Topic {topic_idx + 1}")
 
-        st.pyplot(plt)
+            plt.figure(figsize=(10, 5))
+            plt.imshow(wordcloud, interpolation='bilinear')
+            plt.axis("off")
+            plt.title(f"Word Cloud for Topic {topic_idx + 1}")
+            plt.show()
 
-        # Get the top 8 words for the bar chart
-        barchart_indices = topic.argsort()[-barchart_words:]
-        top_terms = [terms[i] for i in barchart_indices]
-        top_weights = [topic[i] for i in barchart_indices]
+            st.pyplot(plt)
 
-        top_terms_per_topic.append({
-            'topic_count': topic_idx + 1,
-            'top_terms':top_terms,
-            'top_weights': top_weights
-        })
+            # Get the top 8 words for the bar chart
+            barchart_indices = topic.argsort()[-barchart_words:]
+            top_terms = [terms[i] for i in barchart_indices]
+            top_weights = [topic[i] for i in barchart_indices]
 
-        # Sort the terms and weights in descending order
-        sorted_terms_weights = sorted(zip(top_weights, top_terms), reverse=True)
-        top_weights, top_terms = zip(*sorted_terms_weights)
+            top_terms_per_topic.append({
+                'topic_count': topic_idx + 1,
+                'top_terms':top_terms,
+                'top_weights': top_weights
+            })
 
-        # print(sorted_terms_weights)
+            # Sort the terms and weights in descending order
+            sorted_terms_weights = sorted(zip(top_weights, top_terms), reverse=True)
+            top_weights, top_terms = zip(*sorted_terms_weights)
 
-        # Create and display the bar chart
-        plt.figure(figsize=(10, 5))
-        plt.barh(top_terms, top_weights, color='skyblue')
-        plt.xlabel('Weight')
-        plt.title(f"Top {barchart_words} Words in Topic {topic_idx + 1}")
-        plt.gca().invert_yaxis()  # Invert y-axis to display the highest weighted word on top
-        plt.show()
-        st.pyplot(plt)
+            # print(sorted_terms_weights)
 
-        what_topic = identify_topic(sorted_terms_weights)
+            # Create and display the bar chart
+            plt.figure(figsize=(10, 5))
+            plt.barh(top_terms, top_weights, color='skyblue')
+            plt.xlabel('Weight')
+            plt.title(f"Top {barchart_words} Words in Topic {topic_idx + 1}")
+            plt.gca().invert_yaxis()  # Invert y-axis to display the highest weighted word on top
+            plt.show()
+            st.pyplot(plt)
 
-        st.write(what_topic)
+            what_topic = identify_topic(sorted_terms_weights)
+
+            st.write(what_topic)
 
 
 
