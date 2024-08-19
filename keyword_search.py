@@ -72,8 +72,6 @@ def app():
 
     filtered_result_df = df[df['spacy_lemmatized_tokens'].str.contains(remove_special_characters(keywords))]
 
-    st.dataframe(filtered_result_df.iloc[:50])
-
     if(keywords):
         st.subheader("Word Cloud of Filtered Reviews")
 
@@ -114,13 +112,15 @@ def app():
         st.pyplot(plt)
 
     if(keywords):
-        st.subheader("Bigrams from the keyword(s)")
+        st.subheader("Words associated with keyword")
+
+        n_gram = st.number_input('Select n for ngrams', min_value=2, max_value=5, value=2, step=1)
 
         # Combine all tokens into a single list
         all_tokens = filtered_result_df['spacy_lemmatized_tokens'].tolist()
 
         # Generate bigrams
-        vectorizer = CountVectorizer(ngram_range=(2, 2))  # bigrams only
+        vectorizer = CountVectorizer(ngram_range=(n_gram, n_gram))  # bigrams only
         X = vectorizer.fit_transform(all_tokens)
 
         # Get the bigram counts
@@ -130,6 +130,8 @@ def app():
 
         # Convert to DataFrame for easy plotting
         bigram_df = pd.DataFrame(bigram_frequencies, columns=['bigram', 'count'])
+
+        bigram_df = bigram_df[bigram_df['bigram'].str.contains(keywords)]
 
         # Plot the top 10 most common bigrams
         top_bigrams = bigram_df.head(10)
