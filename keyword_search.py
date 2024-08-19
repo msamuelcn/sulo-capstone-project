@@ -138,8 +138,8 @@ def app():
         plt.figure(figsize=(10, 8))
         plt.barh(top_bigrams['bigram'], top_bigrams['count'], color='skyblue')
         plt.xlabel('Frequency')
-        plt.ylabel('Bigrams')
-        plt.title('Top 10 Most Frequent Bigrams')
+        plt.ylabel('Words')
+        plt.title('Most Frequent Associated word')
         plt.gca().invert_yaxis()  # Highest values on top
         st.pyplot(plt)
     if(keywords):

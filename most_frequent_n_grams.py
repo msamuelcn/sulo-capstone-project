@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 import openai
 import re
+import seaborn as sns
 
 openai.api_key = st.secrets['api_key']
 
@@ -33,49 +34,44 @@ def app():
 
     n_gram = st.number_input('Select n for ngrams', min_value=2, max_value=5, value=2, step=1)
 
+    rows_n = st.number_input('How many rows to show?', min_value=2, max_value=100, value=10, step=1)
+
     if n_gram:
         st.subheader("Words from the keyword(s)")
 
-        # Combine all tokens into a single list
-        all_tokens = df['spacy_lemmatized_tokens'].tolist()
+        def ngram_analysis(df, text_column, n=2):
+            # Initialize the CountVectorizer for n-gram analysis
+            vectorizer = CountVectorizer(ngram_range=(n, n))
 
-        # Generate ngrams
-        vectorizer = CountVectorizer(ngram_range=(n_gram, n_gram))  # ngrams only
-        X = vectorizer.fit_transform(all_tokens)
+            # Fit the vectorizer to the text data and transform it into a matrix of token counts
+            ngram_matrix = vectorizer.fit_transform(df[text_column])
 
-        # Get the ngram counts
-        ngram_counts = X.sum(axis=0)
-        ngram_frequencies = [(word, ngram_counts[0, idx]) for word, idx in vectorizer.vocabulary_.items()]
-        ngram_frequencies = sorted(ngram_frequencies, key=lambda x: x[1], reverse=True)
+            # Sum the counts of each n-gram and convert them into a DataFrame
+            ngram_counts = pd.DataFrame(ngram_matrix.sum(axis=0), columns=vectorizer.get_feature_names_out()).T
+            ngram_counts.columns = ['Frequency']
 
-        # Convert to DataFrame for easy plotting
-        ngram_df = pd.DataFrame(ngram_frequencies, columns=['ngram', 'count'])
+            # Sort the n-grams by frequency in descending order
+            ngram_counts = ngram_counts.sort_values(by='Frequency', ascending=False)
 
-        # Merge the ngram counts with the original DataFrame
-        df['ngram'] = df['spacy_lemmatized_tokens'].apply(lambda x: [ng for ng in ngram_df['ngram'] if ng in x])
-        df = df.explode('ngram').dropna(subset=['ngram'])
+            return ngram_counts
 
-        # Group by ngram and sentiment
-        sentiment_counts = df.groupby(['ngram', 'knn_sentiment']).size().unstack(fill_value=0)
+        result_n_gram = ngram_analysis(df,'spacy_lemmatized_tokens',n_gram)
 
-        # Plot the top 20 most common ngrams with sentiment stacked
-        top_ngrams = ngram_df.head(20)
-        top_sentiment_counts = sentiment_counts.loc[top_ngrams['ngram']]
+        top_ngrams = result_n_gram.head(rows_n)
 
-        top_sentiment_counts.plot(kind='barh', stacked=True, figsize=(10, 8), color=['red', 'blue', 'green'])
+        # Plot the results
+        plt.figure(figsize=(10, 6))
+        sns.barplot(x=top_ngrams['Frequency'], y=top_ngrams.index, palette='viridis')
+
+        plt.title(f'Top {rows_n} n-grams')
         plt.xlabel('Frequency')
-        plt.ylabel('N-grams')
-        plt.title('Top 20 Most Frequent N-grams with Sentiment Analysis')
-        plt.gca().invert_yaxis()  # Highest values on top
+        plt.ylabel('n-gram')
+        plt.show()
+
         st.pyplot(plt)
 
-        top_sentiment_counts['frequency'] = top_sentiment_counts['negative'] + top_sentiment_counts['neutral'] + top_sentiment_counts['positive']
-        top_sentiment_counts = top_sentiment_counts.reset_index()
-        top_sentiment_counts = top_sentiment_counts[['ngram','frequency','negative','neutral','positive']]
-        top_sentiment_counts.rename(columns={'ngram': 'word'})
+        st.dataframe(top_ngrams.iloc[:rows_n])
 
-        # Display the n-gram frequency DataFrame
-        st.dataframe(top_sentiment_counts.iloc[:20]  )
     else:
         st.write("No reviews match the keyword(s).")
 
